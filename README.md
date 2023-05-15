@@ -16,13 +16,14 @@
     ```bash
     poetry install
     ```
-4. Переименовать .env_example в .env:
+4. Переименовать `.env_example` в `.env`:
    ```bash
    mv .env_example .env
    ```
-5. Занесите необходимые параметры:
+5. Занесите в `.env` необходимые параметры:
 
-   - DVMN_PERSONAL_TOKEN - персональный токен сайта [dvmn.org](https://dvmn.org/). Можно получить тут - [API Девмана](https://dvmn.org/api/docs/)
+   - `DVMN_PERSONAL_TOKEN` - персональный токен сайта [dvmn.org](https://dvmn.org/). Можно получить тут - [API Девмана](https://dvmn.org/api/docs/)
+   - `TELEGRAM_BOT_TOKEN` - токен Телеграм-бота. Как получить, можно посмотреть [тут](https://way23.ru/регистрация-бота-в-telegram.html).
 
 
 ### Цель проекта
