@@ -16,21 +16,31 @@ DVMN_PERSONAL_TOKEN = env.str('DVMN_PERSONAL_TOKEN')
 headers = {
     'Authorization': f'Token {DVMN_PERSONAL_TOKEN}'
 }
+
+payload = {'timestamp': None}
 while True:
     try:
         response = requests.get(
             DVMN_LONG_POLLING_URL,
             headers=headers,
-            timeout=5
+            params=payload
         )
         response.raise_for_status()
 
         review_response = response.json()
 
         pprint(review_response)
+        payload = {
+            'timestamp': review_response['timestamp_to_request']
+        }
+        print(payload)
+
     except requests.exceptions.ReadTimeout:
         print('Сервис не ответил, пробую еще...')
 
     except requests.exceptions.ConnectionError:
         print('Отсутствует связь с сервисом, попробую еще через 5 сек...')
         time.sleep(5)
+    except KeyboardInterrupt:
+        print('Работа программы завершена')
+        break
