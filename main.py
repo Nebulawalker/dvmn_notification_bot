@@ -1,6 +1,4 @@
-import time
 import requests
-import time
 from environs import Env
 from pprint import pprint
 
@@ -16,12 +14,11 @@ DVMN_PERSONAL_TOKEN = env.str('DVMN_PERSONAL_TOKEN')
 headers= {
     'Authorization': f'Token {DVMN_PERSONAL_TOKEN}'
 }
-start_time = time.monotonic()
-response = requests.get(DVMN_LONG_POLLING_URL, headers=headers)
-response.raise_for_status()
+while True:
+    response = requests.get(DVMN_LONG_POLLING_URL, headers=headers)
+    response.raise_for_status()
 
-review_response = response.json()
+    review_response = response.json()
 
-pprint(review_response)
-print(f'Таймаут = {time.monotonic() - start_time}') #90 sec
+    pprint(review_response)
 
