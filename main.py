@@ -6,6 +6,7 @@ from pprint import pprint
 DVMN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DVMN_LONG_POLLING_URL = 'https://dvmn.org/api/long_polling/'
 
+
 env=Env()
 env.read_env()
 
@@ -15,10 +16,18 @@ headers= {
     'Authorization': f'Token {DVMN_PERSONAL_TOKEN}'
 }
 while True:
-    response = requests.get(DVMN_LONG_POLLING_URL, headers=headers)
-    response.raise_for_status()
+    try:
+        response = requests.get(
+            DVMN_LONG_POLLING_URL,
+            headers=headers,
+            timeout=5
+        )
+        response.raise_for_status()
 
-    review_response = response.json()
+        review_response = response.json()
 
-    pprint(review_response)
+        pprint(review_response)
+    except requests.exceptions.ReadTimeout:
+        print('Сервис не ответил, пробую еще...')
+        continue
 
