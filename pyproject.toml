@@ -10,6 +10,7 @@ packages = [{include = "dvmn_notification_bot"}]
 python = "^3.11"
 environs = "^9.5.0"
 requests = "^2.30.0"
+python-telegram-bot = "13.15"
 
 
 [tool.poetry.group.dev.dependencies]
