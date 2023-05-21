@@ -53,8 +53,7 @@ async def poll_reviews():
                 for notification in notifications:
                     await bot.send_message(
                         text=notification,
-                        chat_id=chat_id,
-                        parse_mode='Markdown'
+                        chat_id=chat_id
                     )
 
                 payload = {
