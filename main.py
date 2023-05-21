@@ -8,6 +8,21 @@ DVMN_REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 DVMN_LONG_POLLING_URL = 'https://dvmn.org/api/long_polling/'
 
 
+def form_notifications(attempts):
+    notification_texts = []
+    for attempt in attempts:
+        notification_text = f"""У вас проверили работу:
+["{attempt["lesson_title"]}"]({attempt["lesson_url"]})"""
+
+        if attempt['is_negative']:
+            notification_text += '\nК сожалению, в работе нашлись ошибки.'
+        else:
+            notification_text += '\nПреподавателю все понравилось, можно приступать к следующему уроку!'
+
+        notification_texts.append(notification_text)
+    return notification_texts
+
+
 def start_polling():
     headers = {
         'Authorization': f'Token {env.str("DVMN_PERSONAL_TOKEN")}'
@@ -23,30 +38,23 @@ def start_polling():
             response = requests.get(
                 DVMN_LONG_POLLING_URL,
                 headers=headers,
-                params=payload
+                params=payload,
+                timeout=95
             )
             response.raise_for_status()
 
             review_response = response.json()
 
             if review_response['status'] == 'found':
-                for attempt in review_response['new_attempts']:
-                    if attempt['is_negative']:
-                        bot.send_message(
-                            text=f'У вас проверили работу:\n'
-                                 f'["{attempt["lesson_title"]}"]({attempt["lesson_url"]})\n'
-                                 f'К сожалению, в работе нашлись ошибки.',
-                            chat_id=chat_id,
-                            parse_mode='Markdown'
-                            )
-                    else:
-                        bot.send_message(
-                            text=f'У вас проверили работу:\n'
-                                 f'["{attempt["lesson_title"]}"]({attempt["lesson_url"]})\n'
-                                 f'Преподавателю все понравилось, можно приступать к следующему уроку!',
-                            chat_id=chat_id,
-                            parse_mode='Markdown'
-                            )
+                notifications = form_notifications(
+                    review_response['new_attempts']
+                )
+                for notification in notifications:
+                    bot.send_message(
+                        text=notification,
+                        chat_id=chat_id
+                    )
+
                 payload = {
                     'timestamp': review_response['last_attempt_timestamp']
                 }
@@ -56,7 +64,7 @@ def start_polling():
                 }
 
         except requests.exceptions.ReadTimeout:
-            print('Сервис не ответил, пробую еще...')
+            continue
 
         except requests.exceptions.ConnectionError:
             print('Отсутствует связь с сервисом, попробую еще через 5 сек...')

@@ -11,6 +11,21 @@ async def on_startup(dp):
     await poll_reviews()
 
 
+async def form_notifications(attempts):
+    notification_texts = []
+    for attempt in attempts:
+        notification_text = f"""У вас проверили работу:
+["{attempt["lesson_title"]}"]({attempt["lesson_url"]})"""
+
+        if attempt['is_negative']:
+            notification_text += '\nК сожалению, в работе нашлись ошибки.'
+        else:
+            notification_text += '\nПреподавателю все понравилось, можно приступать к следующему уроку!'
+
+        notification_texts.append(notification_text)
+    return notification_texts
+
+
 async def poll_reviews():
     headers = {
         'Authorization': f'Token {env.str("DVMN_PERSONAL_TOKEN")}'
@@ -24,28 +39,24 @@ async def poll_reviews():
                 response = await client.get(
                     DVMN_LONG_POLLING_URL,
                     headers=headers,
-                    params=payload, timeout=95
+                    params=payload,
+                    timeout=95
                 )
             response.raise_for_status()
 
             review_response = response.json()
 
             if review_response['status'] == 'found':
-                for attempt in review_response['new_attempts']:
-                    if attempt['is_negative']:
-                        await bot.send_message(
-                            text=f'У вас проверили работу:\n'
-                                 f'["{attempt["lesson_title"]}"]({attempt["lesson_url"]})\n'
-                                 f'К сожалению, в работе нашлись ошибки.',
-                            chat_id=chat_id
-                            )
-                    else:
-                        await bot.send_message(
-                            text=f'У вас проверили работу:\n'
-                                 f'["{attempt["lesson_title"]}"]({attempt["lesson_url"]})\n'
-                                 f'Преподавателю все понравилось, можно приступать к следующему уроку!',
-                            chat_id=chat_id
-                            )
+                notifications = await form_notifications(
+                    review_response['new_attempts']
+                )
+                for notification in notifications:
+                    await bot.send_message(
+                        text=notification,
+                        chat_id=chat_id,
+                        parse_mode='Markdown'
+                    )
+
                 payload = {
                     'timestamp': review_response['last_attempt_timestamp']
                 }
@@ -53,10 +64,9 @@ async def poll_reviews():
                 payload = {
                     'timestamp': review_response['timestamp_to_request']
                 }
-                print(review_response)
 
         except httpx.TimeoutException:
-            print('Сервис не ответил, пробую еще...')
+            continue
 
         except httpx.ConnectError:
             print('Отсутствует связь с сервисом, попробую еще через 5 сек...')
