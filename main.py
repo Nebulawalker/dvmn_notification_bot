@@ -52,7 +52,8 @@ def start_polling():
                 for notification in notifications:
                     bot.send_message(
                         text=notification,
-                        chat_id=chat_id
+                        chat_id=chat_id,
+                        parse_mode='Markdown'
                     )
 
                 payload = {
