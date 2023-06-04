@@ -2,12 +2,15 @@ from aiogram import Bot, Dispatcher, types, executor
 import httpx
 from environs import Env
 import asyncio
+from loguru import logger
+from notifiers.logging import NotificationHandler
 
 
 DVMN_LONG_POLLING_URL = 'https://dvmn.org/api/long_polling/'
 
 
 async def on_startup(dp):
+    logger.info('Бот запущен!')
     await poll_reviews()
 
 
@@ -19,13 +22,16 @@ async def form_notifications(attempts):
 
         if attempt['is_negative']:
             notification_text += '\nК сожалению, в работе нашлись ошибки.'
+            logger.info(f'Работа "{attempt["lesson_title"]}" проверена, нашлись ошибки!')
         else:
             notification_text += '\nПреподавателю все понравилось, можно приступать к следующему уроку!'
+            logger.info(f'Работа "{attempt["lesson_title"]}" проверена, ошибок нет!')
 
         notification_texts.append(notification_text)
     return notification_texts
 
 
+@logger.catch
 async def poll_reviews():
     headers = {
         'Authorization': f'Token {env.str("DVMN_PERSONAL_TOKEN")}'
@@ -63,18 +69,37 @@ async def poll_reviews():
                 payload = {
                     'timestamp': review_response['timestamp_to_request']
                 }
-
         except httpx.TimeoutException:
             continue
 
         except httpx.ConnectError:
-            print('Отсутствует связь с сервисом, попробую еще через 5 сек...')
+            logger.warning('Отсутствует связь с сервисом, попробую еще через 5 сек...')
             asyncio.sleep(5)
 
 
 if __name__ == '__main__':
     env = Env()
     env.read_env()
+
+    telegram_handler = NotificationHandler(
+        'telegram',
+        defaults={
+            'token': env.str('TELEGRAM_BOT_TOKEN'),
+            'chat_id': env.str('TELEGRAM_ADMIN_ID')
+        }
+    )
+
+    logger.add(
+        telegram_handler,
+        format='{time:HH:mm}  {level}  {message}',
+        level=env.str('LOGGING_LEVEL', 'INFO')
+    )
+
+    logger.add(
+        'logs/debug.log',
+        format='{time:HH:mm}  {level}  {message}',
+        level=env.str('LOGGING_LEVEL', 'INFO')
+    )
 
     bot = Bot(
         env.str('TELEGRAM_BOT_TOKEN'),
