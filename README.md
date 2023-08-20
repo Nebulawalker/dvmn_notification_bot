@@ -17,9 +17,9 @@
     ```bash
     poetry install
     ```
-4. Переименовать `.env_example` в `.env`:
+4. Скопируйте `.env_example` в `.env`:
    ```bash
-   mv .env_example .env
+   cp .env_example .env
    ```
 5. Занесите в `.env` необходимые параметры:
 
@@ -41,6 +41,19 @@ python main.py
 python async_main.py
 ```
 Как только работа будет проверена, бот пришлет уведомление с подробностями.
+
+## Запуск при помощи Docker
+
+Необходим  [Docker](https://docs.docker.com/engine/install/).
+
+Сборка контейнера (требуются root-права):
+```bash
+docker build --tag dvmn-notification-bot:v1 .
+```
+Запуск контейнера (требуются root-права):
+```bash
+docker run --env-file .env --detach --name dvmn-notification-bot dvmn-notification-bot:v1
+```
 
 ### Цель проекта
 
